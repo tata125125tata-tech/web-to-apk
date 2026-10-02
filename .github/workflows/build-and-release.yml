@@ -1,0 +1,154 @@
+name: Build & Release Debug APK
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Publish Direct APK to GitHub Releases?'
+        required: true
+        type: boolean
+        default: true
+      release_tag:
+        description: 'Custom Release Tag (leave empty for auto v1.0.x)'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Package Debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java Development Kit (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant Execute Permissions for Gradlew
+        run: chmod +x gradlew
+
+      - name: Prepare Debug Keystore
+        run: |
+          if [ -f "debug.keystore.base64" ]; then
+            echo "Decoding existing debug.keystore.base64..."
+            base64 -d debug.keystore.base64 > debug.keystore
+          elif [ ! -f "debug.keystore" ]; then
+            echo "Generating new debug keystore..."
+            keytool -genkey -v -keystore debug.keystore -storepass android \
+              -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
+              -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          ls -lh debug.keystore
+
+      - name: Setup Environment Variables
+        run: |
+          # Ensure .env exists with placeholder keys so Secrets Gradle Plugin succeeds
+          if [ ! -f ".env" ]; then
+            cp .env.example .env 2>/dev/null || touch .env
+          fi
+
+      - name: Build Debug APK with Gradle
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
+
+      - name: Prepare APK Artifact for Direct Download
+        id: prep_apk
+        run: |
+          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            echo "::error::No APK file generated in app/build/outputs/apk/debug"
+            exit 1
+          fi
+          
+          OUTPUT_APK="app/build/outputs/apk/debug/Web2APK-IDE-debug.apk"
+          cp "$APK_PATH" "$OUTPUT_APK"
+          
+          # Calculate checksum
+          SHA256=$(sha256sum "$OUTPUT_APK" | awk '{print $1}')
+          SIZE=$(du -h "$OUTPUT_APK" | awk '{print $1}')
+          
+          echo "apk_path=$OUTPUT_APK" >> $GITHUB_OUTPUT
+          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+          echo "size=$SIZE" >> $GITHUB_OUTPUT
+          
+          echo "=== APK Built Successfully ==="
+          echo "Path: $OUTPUT_APK"
+          echo "Size: $SIZE"
+          echo "SHA256: $SHA256"
+
+      - name: Upload Debug APK Artifact (Actions Storage)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Web2APK-IDE-debug-apk
+          path: ${{ steps.prep_apk.outputs.apk_path }}
+          retention-days: 30
+
+      - name: Determine Release Tag
+        id: release_info
+        if: |
+          (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))) ||
+          (github.event_name == 'workflow_dispatch' && inputs.create_release == true)
+        run: |
+          if [ -n "${{ inputs.release_tag }}" ]; then
+            TAG="${{ inputs.release_tag }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            TAG="v1.0.${{ github.run_number }}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Publish Direct APK Download via GitHub Releases
+        if: |
+          (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))) ||
+          (github.event_name == 'workflow_dispatch' && inputs.create_release == true)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: "Web2APK IDE ${{ steps.release_info.outputs.tag }} (Debug APK)"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## 📱 Web2APK IDE - Direct APK Download
+
+            ### 🚀 Direct Download
+            Direct APK download is available below. Download and install directly on any Android phone (Android 7.0+):
+
+            * 📥 **[Web2APK-IDE-debug.apk](https://github.com/${{ github.repository }}/releases/download/${{ steps.release_info.outputs.tag }}/Web2APK-IDE-debug.apk)**
+
+            ---
+            ### 📋 Build Verification & Checksum
+            * **Build Number:** `${{ github.run_number }}`
+            * **Commit:** `${{ github.sha }}`
+            * **File Size:** `${{ steps.prep_apk.outputs.size }}`
+            * **SHA256:**
+            ```
+            ${{ steps.prep_apk.outputs.sha256 }}
+            ```
+
+            ### 📲 Installation Instructions
+            1. Download `Web2APK-IDE-debug.apk` directly to your Android device.
+            2. Tap the downloaded notification or locate the APK in your Downloads folder.
+            3. If prompted, allow "Install unknown apps" for your browser or file manager.
+            4. Launch **Web2APK IDE** and start converting websites to native Android apps!
+          files: |
+            ${{ steps.prep_apk.outputs.apk_path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
