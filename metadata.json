@@ -1,0 +1,6 @@
+{
+  "name": "Web2APK IDE",
+  "description": "Mobile-first Web-to-Android App Builder IDE. Import, edit, preview websites and generate real Android WebView applications and build workflows.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
