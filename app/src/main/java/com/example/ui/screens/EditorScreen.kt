@@ -60,8 +60,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.EditorTab
 import com.example.data.model.ProjectItem
+import com.example.data.model.WebFileType
 import com.example.data.repository.FileManager
 import com.example.ui.components.CodeKeyboardBar
+import com.example.ui.components.CodeSyntaxVisualTransformation
 import com.example.ui.theme.EditorBackgroundDark
 import com.example.ui.theme.EditorGutterDark
 import com.example.ui.theme.EditorLineNumberDark
@@ -384,6 +386,9 @@ fun EditorScreen(
                         fontSize = 13.sp,
                         lineHeight = 20.sp
                     ),
+                    visualTransformation = remember(activeTabPath) {
+                        CodeSyntaxVisualTransformation(WebFileType.fromExtension(activeTabPath.substringAfterLast('.', "html")))
+                    },
                     cursorBrush = SolidColor(TealPrimary),
                     modifier = Modifier
                         .weight(1f)

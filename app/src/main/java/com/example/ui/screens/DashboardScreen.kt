@@ -99,15 +99,15 @@ fun DashboardScreen(
             onClick = onNavigateAndroidSettings
         ),
         DashboardAction(
-            title = "Build APK / AAB",
-            subtitle = "Generate Gradle project & compile",
+            title = "Local Build APK",
+            subtitle = "On-device compiler & packaging",
             icon = Icons.Default.Build,
             color = Color(0xFFF59E0B),
             onClick = onNavigateBuild
         ),
         DashboardAction(
-            title = "Git & CI/CD",
-            subtitle = "GitHub repo & cloud actions workflow",
+            title = "Git & Backup",
+            subtitle = "Backup, export & repo sync (Optional)",
             icon = Icons.Default.Share,
             color = Color(0xFFEC4899),
             onClick = onNavigateGit

@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Info
@@ -82,6 +83,7 @@ fun HomeScreen(
     fileManager: FileManager,
     onOpenProject: (String) -> Unit,
     onOpenGitHubForProject: (String) -> Unit,
+    onOpenEnvironmentDiagnostics: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -150,7 +152,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "Web2APK IDE",
+                                text = "Web2App IDE",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
@@ -248,16 +250,16 @@ fun HomeScreen(
                             }
 
                             OutlinedButton(
-                                onClick = { showInfoDialog = true },
+                                onClick = onOpenEnvironmentDiagnostics,
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(44.dp)
-                                    .testTag("github_guide_button"),
+                                    .testTag("env_diagnostics_button"),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Build, contentDescription = null, modifier = Modifier.size(16.dp), tint = TealPrimary)
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("GitHub Guide", fontSize = 13.sp)
+                                Text("Build Tools", fontSize = 13.sp)
                             }
                         }
                     }

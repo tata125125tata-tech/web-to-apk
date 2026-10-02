@@ -86,8 +86,10 @@ fun GitScreen(
     val coroutineScope = rememberCoroutineScope()
 
     var patToken by remember { mutableStateOf("") }
-    var ownerName by remember { mutableStateOf(project.config.gitHubRepo.substringBefore('/', "")) }
-    var repoName by remember { mutableStateOf(project.config.gitHubRepo.substringAfter('/', "")) }
+    val defaultOwner = if (project.config.gitHubRepo.contains('/')) project.config.gitHubRepo.substringBefore('/') else "tata125125tata-tech"
+    val defaultRepo = if (project.config.gitHubRepo.contains('/')) project.config.gitHubRepo.substringAfter('/') else "web-to-apk"
+    var ownerName by remember { mutableStateOf(defaultOwner) }
+    var repoName by remember { mutableStateOf(defaultRepo) }
     var branchName by remember { mutableStateOf(project.config.gitHubBranch) }
 
     var isVerifying by remember { mutableStateOf(false) }

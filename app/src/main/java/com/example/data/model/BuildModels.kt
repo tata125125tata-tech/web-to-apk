@@ -1,5 +1,7 @@
 package com.example.data.model
 
+import java.io.File
+
 enum class LogLevel {
     INFO,
     SUCCESS,
@@ -25,6 +27,43 @@ enum class BuildMode {
     REMOTE
 }
 
+enum class ComponentStatus {
+    INSTALLED,
+    CONFIGURED,
+    MISSING,
+    DOWNLOADING,
+    ERROR
+}
+
+data class EnvironmentComponentInfo(
+    val name: String,
+    val status: ComponentStatus,
+    val version: String,
+    val path: String,
+    val details: String,
+    val isRequired: Boolean = true
+)
+
+data class BuildEnvironmentReport(
+    val components: List<EnvironmentComponentInfo>,
+    val availableStorageMb: Long,
+    val availableMemoryMb: Long,
+    val totalMemoryMb: Long,
+    val isOnline: Boolean,
+    val architecture: String,
+    val canBuildLocally: Boolean
+)
+
+data class BuildOutputInfo(
+    val apkFile: File,
+    val apkName: String,
+    val apkSizeFormatted: String,
+    val apkSizeBytes: Long,
+    val versionName: String,
+    val buildDurationMs: Long,
+    val isRelease: Boolean
+)
+
 data class SigningSettings(
     val useReleaseSigning: Boolean = false,
     val keystorePath: String = "",
@@ -38,5 +77,5 @@ data class GitHubSettings(
     val owner: String = "",
     val repoName: String = "",
     val branch: String = "main",
-    val workflowName: String = "build-apk.yml"
+    val workflowName: String = "build-and-release.yml"
 )
